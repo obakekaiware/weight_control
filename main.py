@@ -73,14 +73,11 @@ def confirm_user(name, password):
     if name == "":
         st.write("名前を入力してください。")
         return False
-    elif not confirm_name(name):
-        st.write("名前が登録されていません。")
-        return False
     elif password == "":
         st.write("パスワードを入力してください。")
         return False
-    elif not confirm_password(name, password):
-        st.write("パスワードが違います。")
+    elif not (confirm_name(name) and confirm_password(name, password)):
+        st.write("名前またはパスワードが違います。")
         return False
     return True
 
