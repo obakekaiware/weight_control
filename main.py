@@ -199,8 +199,8 @@ def calc_standard_calorie(sex, age, activity_level, standard_weight):
 
 
 def estimate_goal():
-    with st.form("標準体重と標準カロリーを計算します。"):
-        st.write("目標をざっくりと計算します。")
+    with st.form("標準体重の計算"):
+        st.write("標準体重と標準カロリーを計算します。")
         sex = st.radio("性別", ("男", "女"))
         height = st.number_input("身長(cm)", value=160, step=1)
         age = st.number_input("年齢", value=18, step=1)
