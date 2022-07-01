@@ -37,10 +37,14 @@ def regist_user(name, password):
 def sign_up():
     with st.form("初回登録"):
         name = st.text_input("名前")
-        password = st.text_input("パスワード")
+        password = st.text_input("パスワード", type="password")
+        password_ = st.text_input("パスワード（確認用）", type="password")
         submitted = st.form_submit_button("登録")
         if submitted:
-            regist_user(name, password)
+            if password == password_:
+                regist_user(name, password)
+            else:
+                st.write("パスワードが一致しません。")
 
 
 def confirm_name(name):
@@ -88,7 +92,7 @@ def sign_in():
 
     with st.form("ログイン"):
         name = st.text_input("名前")
-        password = st.text_input("パスワード")
+        password = st.text_input("パスワード", type="password")
         submitted = st.form_submit_button("ログイン")
         if submitted:
             if confirm_user(name, password):
@@ -169,7 +173,7 @@ def reset_name():
     with st.form("名前の変更"):
         old_name = st.text_input("現在の名前")
         new_name = st.text_input("新しい名前")
-        password = st.text_input("パスワード")
+        password = st.text_input("パスワード", type="password")
         submitted = st.form_submit_button("変更")
         if submitted:
             if new_name == "":
@@ -184,12 +188,16 @@ def reset_name():
 def reset_password():
     with st.form("パスワードの変更"):
         name = st.text_input("名前")
-        old_password = st.text_input("現在のパスワード")
-        new_password = st.text_input("新しいパスワード")
+        old_password = st.text_input("現在のパスワード", type="password")
+        new_password = st.text_input("新しいパスワード", type="password")
+        new_password_ = st.text_input(
+            "新しいパスワード（確認用）", type="password")
         submitted = st.form_submit_button("変更")
         if submitted:
             if new_password == "":
                 st.write("新しいパスワードを入力してください。")
+            elif new_password != new_password_:
+                st.write("新しいパスワードが一致しません。")
             elif confirm_user(name, old_password):
                 password_zip_path = os.path.join("data", name, "password.zip")
                 pyminizip.compress(
@@ -208,7 +216,7 @@ def delete_account():
 
     with st.form("アカウントの削除"):
         name = st.text_input("名前")
-        password = st.text_input("パスワード")
+        password = st.text_input("パスワード", type="password")
         submitted = st.form_submit_button("削除")
         if submitted:
             if confirm_user(name, password):
@@ -247,6 +255,7 @@ if __name__ == "__main__":
         plot_weight(weight_csv_path)
         compress_weight_file(weight_csv_path, weight_zip_path, password)
         
+    st.subheader("アカウントの操作")
     with st.expander("名前の変更"):
         reset_name()
     with st.expander("パスワードの変更"):
