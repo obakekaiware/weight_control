@@ -165,6 +165,43 @@ def plot_weight(weight_csv_path):
         st.line_chart(weight_df)
 
 
+def reset_name():
+    with st.form("名前の変更"):
+        old_name = st.text_input("現在の名前")
+        new_name = st.text_input("新しい名前")
+        password = st.text_input("パスワード")
+        submitted = st.form_submit_button("変更")
+        if submitted:
+            if new_name == "":
+                st.write("新しい名前を入力してください。")
+            elif confirm_user(old_name, password):
+                old_name = os.path.join("data", old_name)
+                new_name = os.path.join("data", new_name)
+                os.rename(old_name, new_name)
+                st.write("名前を変更しました。")
+
+
+def reset_password():
+    with st.form("パスワードの変更"):
+        name = st.text_input("名前")
+        old_password = st.text_input("現在のパスワード")
+        new_password = st.text_input("新しいパスワード")
+        submitted = st.form_submit_button("変更")
+        if submitted:
+            if new_password == "":
+                st.write("新しいパスワードを入力してください。")
+            elif confirm_user(name, old_password):
+                password_zip_path = os.path.join("data", name, "password.zip")
+                pyminizip.compress(
+                    "password.txt".encode('cp932'),
+                    "", 
+                    password_zip_path.encode('cp932'),
+                    new_password.encode('cp932'), 
+                    1
+                )
+                st.write("パスワードを変更しました。")
+
+
 def delete_account():
     if "first_confirmation" not in st.session_state:
         st.session_state.first_confirmation = False
@@ -210,5 +247,9 @@ if __name__ == "__main__":
         plot_weight(weight_csv_path)
         compress_weight_file(weight_csv_path, weight_zip_path, password)
         
+    with st.expander("名前の変更"):
+        reset_name()
+    with st.expander("パスワードの変更"):
+        reset_password()
     with st.expander("アカウントの削除"):
         delete_account()
