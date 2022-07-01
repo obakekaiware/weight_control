@@ -4,6 +4,7 @@ import shutil
 import pyminizip
 import zipfile
 import json
+import time
 
 import streamlit as st
 import pandas as pd
@@ -24,10 +25,10 @@ def regist_user(name, password):
     else:
         os.makedirs(user_dir)
         pyminizip.compress(
-            "password.txt",
+            "password.txt".encode('cp932'),
             "", 
-            os.path.join(user_dir, "password.zip"),
-            password, 
+            os.path.join(user_dir, "password.zip").encode('cp932'),
+            password.encode('cp932'), 
             1
         )
         st.write("登録完了！")
@@ -51,7 +52,12 @@ def confirm_password(name, password):
     user_dir = os.path.join("data", name)
     password_zip_path = os.path.join(user_dir, "password.zip")
     try:
-        pyminizip.uncompress(password_zip_path, password, "", 0)
+        pyminizip.uncompress(
+            password_zip_path.encode('cp932'),
+            password.encode('cp932'),
+            "",
+            0
+        )
     except Exception:
         # パスワード認証失敗
         return False
@@ -76,16 +82,87 @@ def confirm_user(name, password):
 
 
 def sign_in():
+    st.subheader("ログイン")
+    if "signed_in" not in st.session_state:
+        st.session_state.signed_in = False
+
     with st.form("ログイン"):
         name = st.text_input("名前")
         password = st.text_input("パスワード")
         submitted = st.form_submit_button("ログイン")
         if submitted:
             if confirm_user(name, password):
+                st.session_state.signed_in = True
                 st.write("ログインしました。")
             else:
                 st.write("ログインできませんでした。")
     return name, password
+
+
+def compress_weight_file(weight_csv_path, weight_zip_path, password):
+    pyminizip.compress(
+        weight_csv_path.encode('cp932'),
+        "",
+        weight_zip_path.encode('cp932'),
+        password.encode('cp932'),
+        1
+    )
+    os.remove(weight_csv_path)
+
+
+def uncompress_weight_file(weight_zip_path, password):
+    if os.path.exists(weight_zip_path):
+        user_dir = os.path.dirname(weight_zip_path)
+        pyminizip.uncompress(
+            weight_zip_path.encode('cp932'),
+            password.encode('cp932'),
+            user_dir.encode('cp932'),
+            0
+        )
+        os.chdir(os.path.join("..", ".."))
+    else:
+        weight_df = pd.DataFrame(columns=["日にち", "体重"])
+        weight_csv_path = os.path.join("data", name, "weight.csv")
+        weight_df.to_csv(weight_csv_path)
+
+
+def regist_weight(weight_csv_path):
+    st.subheader("体重の入力")
+    with st.form("体重の入力"):
+        date = st.date_input("日にち")
+
+        weight_df = pd.read_csv(
+            weight_csv_path, index_col="日にち", parse_dates=True)
+
+        if len(weight_df):
+            weight_init = weight_df.iloc[-1, 0]
+        else:
+            weight_init = 50.0
+        weight = st.number_input(
+            "体重", value=weight_init, format="%.1f", step=0.1)
+
+        if len(weight_df):
+            goal_init = weight_df.iloc[0, 1]
+        else:
+            goal_init = 50.0
+        goal = st.number_input(
+            "目標", value=goal_init, format="%.1f", step=0.1)
+
+        submitted = st.form_submit_button("登録")
+        if submitted:
+            weight_df.loc[date, "体重"] = weight
+            weight_df["目標"] = goal
+            weight_df = weight_df[["体重", "目標"]]
+            weight_df.to_csv(weight_csv_path)
+            st.write("登録完了！")
+
+
+def plot_weight(weight_csv_path):
+    weight_df = pd.read_csv(weight_csv_path)
+    if len(weight_df) > 0:
+        weight_df = pd.read_csv(
+            weight_csv_path, index_col='日にち', parse_dates=True)
+        st.line_chart(weight_df)
 
 
 def delete_account():
@@ -125,61 +202,13 @@ if __name__ == "__main__":
 
     name, password = sign_in()
 
-
-
-    #         path = os.path.join("data", name, "weight.csv")
-    #     if os.path.exists(path):
-    #             weight_df = pd.read_csv(path)
-    #         else:
-    #             weight_df = pd.DataFrame(columns=["weight"], index=[today])
-
-    # path = os.path.join("data", "kaiware", "weight.csv")
-    # if os.path.exists(path):
-    #     weight_df = pd.read_csv(path, index_col='date', parse_dates=True)
-    # else:
-    #     weight_df = pd.DataFrame(columns=["date", "体重", "目標"])
-    #     weight_df['date'] = pd.to_datetime(weight_df['date'])
-    #     weight_df = weight_df.set_index("date")
-
-    # with st.form("体重入力"):
-    #     date = st.date_input("日にち")
-
-    #     if len(weight_df):
-    #         weight_init = weight_df.iloc[-1, 0]
-    #     else:
-    #         weight_init = 50.0
-    #     weight = st.number_input(
-    #         "体重", value=weight_init, format="%.1f", step=0.1)
-
-    #     if len(weight_df):
-    #         goal_init = weight_df.iloc[0, 1]
-    #     else:
-    #         goal_init = 50.0
-    #     goal = st.number_input(
-    #         "目標", value=goal_init, format="%.1f", step=0.1)
-
-    #     submitted = st.form_submit_button("登録")
-    #     if submitted:
-    #         st.write("登録完了！")
-    #         weight_df.loc[date, "体重"] = weight
-    #         weight_df["目標"] = goal
-    #         weight_df.to_csv(path)
-
-    #         weight_df = pd.read_csv(path, index_col='date', parse_dates=True)
-    #         st.dataframe(weight_df)
-    #         # st.line_chart(weight_df.rename(
-    #         #     columns={"date": "index"}).set_index("index"))
-    #         st.line_chart(weight_df, width=1)
-
-
-
-    # clicked = st.button("Initialize")
-    # if clicked:
-    #     weight_df = pd.read_csv(path)
-    #     weight_df = pd.DataFrame(columns=["date", "体重", "目標"])
-    #     weight_df['date'] = pd.to_datetime(weight_df['date'])
-    #     weight_df = weight_df.set_index("date")
-    #     weight_df.to_csv(path)
-
+    if st.session_state.signed_in == True:
+        weight_csv_path = os.path.join("data", name, "weight.csv")
+        weight_zip_path = os.path.join("data", name, "weight.zip")
+        uncompress_weight_file(weight_zip_path, password)
+        regist_weight(weight_csv_path)
+        plot_weight(weight_csv_path)
+        compress_weight_file(weight_csv_path, weight_zip_path, password)
+        
     with st.expander("アカウントの削除"):
         delete_account()
