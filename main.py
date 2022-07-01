@@ -166,6 +166,71 @@ def plot_weight(weight_csv_path):
         st.line_chart(weight_df)
 
 
+def calc_standard_calorie(sex, age, activity_level, standard_weight):
+    calorie_df = pd.read_csv("calorie.csv", encoding="shift-jis")
+    if 18 <= age < 30:
+        age_id = 0
+    elif 30 <= age < 50:
+        age_id = 1
+    elif 50 <= age < 65:
+        age_id = 2
+    elif 65 <= age < 75:
+        age_id = 3
+    elif 75 <= age:
+        age_id = 4
+    else:
+        st.write("18歳未満には標準カロリーの計算は対応していません。")
+        return 0
+
+    if (sex == "男") and (activity_level == "低い（あまり動かない）"):
+        standard_calorie = calorie_df.loc[age_id, "m1"] * standard_weight
+    elif (sex == "男") and (activity_level == "ふつう（まあまあ動く）"):
+        standard_calorie = calorie_df.loc[age_id, "m2"] * standard_weight
+    elif (sex == "男") and (activity_level == "高い（かなり動く）"):
+        standard_calorie = calorie_df.loc[age_id, "m3"] * standard_weight
+    elif (sex == "女") and (activity_level == "低い（あまり動かない）"):
+        standard_calorie = calorie_df.loc[age_id, "f1"] * standard_weight
+    elif (sex == "女") and (activity_level == "ふつう（まあまあ動く）"):
+        standard_calorie = calorie_df.loc[age_id, "f2"] * standard_weight
+    elif (sex == "女") and (activity_level == "高い（かなり動く）"):
+        standard_calorie = calorie_df.loc[age_id, "f3"] * standard_weight
+
+    return standard_calorie
+
+
+def estimate_goal():
+    with st.form("標準体重と標準カロリーを計算します。"):
+        st.write("目標をざっくりと計算します。")
+        sex = st.radio("性別", ("男", "女"))
+        height = st.number_input("身長(cm)", value=160, step=1)
+        age = st.number_input("年齢", value=18, step=1)
+        activity_level = st.radio(
+            "身体活動レベル",
+            (
+                "低い（あまり動かない）",
+                "ふつう（まあまあ動く）",
+                "高い（かなり動く）",
+            ))
+        submitted = st.form_submit_button("決定")
+        if submitted:
+            standard_weight = 22 * (height/100)**2
+            st.write("あなたの標準体重：", str(round(standard_weight, 1)), "kg")
+            standard_calorie = calc_standard_calorie(
+                sex, age, activity_level, standard_weight)
+            if standard_calorie:
+                st.write(
+                    "標準摂取カロリー：",
+                    str(round(standard_calorie)), "kcal")
+            st.caption((
+                "標準体重は、BMIが22となる体重のことで、"
+                "最も病気になりにくい体重と言われています。"
+            ))
+            st.caption((
+                "標準摂取カロリーは、標準体重を目指す上での1日の"
+                "必要摂取カロリーのことです。"
+            ))
+
+
 def reset_name():
     with st.form("名前の変更"):
         old_name = st.text_input("現在の名前")
@@ -252,6 +317,9 @@ if __name__ == "__main__":
         plot_weight(weight_csv_path)
         compress_weight_file(weight_csv_path, weight_zip_path, password)
         
+    st.subheader("標準体重の計算")
+    estimate_goal()
+
     st.subheader("アカウントの操作")
     with st.expander("名前の変更"):
         reset_name()
